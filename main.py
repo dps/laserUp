@@ -3,6 +3,32 @@ import json
 def linear_interpolate(list_of_lists):
   return [(1.0 * sum(e))/len(e) for e in zip(*list_of_lists)]
 
+numeral_points = {
+  '0': [(0,0), (25,0), (25,50), (0,50), (0,0)],
+  '1': [(25,0), (25,50)],
+  '2': [(0,0), (25,0), (25,25), (0,25), (0, 50), (25,50)],
+  '3': [(0,0), (25,0), (25,25), (10,25), (25,25), (25, 50), (0,50)],
+  '4': [(0,0), (0, 25), (25,25), (25,0), (25,50)],
+  '5': [(25,0), (0, 0), (0,25), (25,25), (25,50), (0, 50)],
+  '6': [(0, 0), (0,25), (25,25), (25,50), (0, 50), (0, 25)],
+  '7': [(0,0), (25, 0), (25,50)],
+  '8': [(0, 25), (25,25), (25,0), (0,0), (0,50), (25,50), (25,25)],
+  '9': [(25,50), (25,0), (0,0), (0, 25), (25,25)],
+}
+
+def digit(ch, xo, yo):
+  points = "".join(["%f,%f " % (a + xo, b + yo) for (a,b) in numeral_points[ch]])
+  return '<polyline points="%s" fill="none" stroke="red" />' % points
+
+def number_to_svg_fragment(num, xo, yo):
+  result = ''
+  s = str(num)
+  for d in s:
+    result = result + digit(d, xo, yo)
+    xo += 60
+  return result
+
+
 # JSON file is laid out with top (north) rows first.
 #
 #
@@ -72,18 +98,19 @@ class SVGGenerator(object):
     offset = 0
     polygon = ""
     for rn in row_nums:
-      polygon = polygon + self.svg(rn, y_offset=offset) + "\n"
-      offset = offset + 610
+      pg, yadjust = self.svg(rn, y_offset=offset)
+      polygon = polygon + pg + "\n"
+      offset = offset + 610 - yadjust
     print(self.TEMPLATE % polygon)
 
   def svg(self, row_num, y_offset=0, x_offset=0):
     DEPTH = 600
     WIDTH = 2500
-    points = [(0 + x_offset,DEPTH + y_offset),(0 + x_offset ,DEPTH - 100 + y_offset)]
     row = self._row_data[row_num]
     max_height = max(row)
     max_scaled = max_height * self._scale
-    #y_offset = y_offset - (500 - max_scaled)
+    y_offset = y_offset - (500 - max_scaled)
+    points = [(0 + x_offset,DEPTH + y_offset),(0 + x_offset ,DEPTH - 100 + y_offset)]
 
     step = (WIDTH * 1.0) / len(row)
     curr = 0.0
@@ -94,10 +121,12 @@ class SVGGenerator(object):
     points.append((x_offset + WIDTH, y_offset + DEPTH))
     l = ["%f,%f " % (a,b) for (a,b) in points]
     polygon = '<polygon points="%s" fill="none" stroke="blue" />' % (''.join(l))
+    polygon = polygon + number_to_svg_fragment(row_num, x_offset + 400, y_offset + DEPTH - 80)
+
     polygon = polygon + '<circle cx="100" cy="%d" r="32.5" fill="none" stroke="blue"/>' % (550 + y_offset)
     polygon = polygon + '<circle cx="2400" cy="%d" r="32.5" fill="none" stroke="blue"/>' % (550 + y_offset)
 
-    return polygon
+    return polygon, (500 - max_scaled)
 
 
 if __name__ == "__main__":
@@ -105,4 +134,4 @@ if __name__ == "__main__":
     e = ElevationParser()
     rows, data = e.parse("testdata/catalina.json")
     s = SVGGenerator(rows, data)
-    s.svg_file([75, 120, 121, 122])
+    s.svg_file([1, 2, 121, 122])
