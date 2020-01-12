@@ -1,5 +1,8 @@
 import json
 
+def linear_interpolate(list_of_lists):
+  return [(1.0 * sum(e))/len(e) for e in zip(*list_of_lists)]
+
 # JSON file is laid out with top (north) rows first.
 #
 #
@@ -8,7 +11,7 @@ class ElevationParser(object):
   def __init__(self):
       pass
 
-  def parse(self, filename):
+  def parse(self, filename, material_height_mm=1.0, design_width_mm=250.0):
       data = json.load(open(filename, "r"))
       pos = 0
       landRows = 0
@@ -28,7 +31,21 @@ class ElevationParser(object):
               firstPrint = True
           rows.append(row)
       #print("LandRows: %d of %d" % (landRows,data['windowHeight']))
-      return (rows, data)
+      # interpolate to maintain aspect ratio of the data
+      aspect_ratio = (data['windowWidth'] * 1.0) / (data['windowHeight'] * 1.0)
+      desired_slices = design_width_mm / (material_height_mm * aspect_ratio)
+      #print("Desired slices: %f" % desired_slices)
+      interpolate_slice_count = int(data['windowHeight'] / desired_slices)
+      if interpolate_slice_count < 1:
+        interpolate_slice_count = 1
+      #print("Interpolate every: %d" % interpolate_slice_count)
+      retrows = []
+      for i in range(0, int(desired_slices)):
+        irows = []
+        for z in range(0, interpolate_slice_count):
+          irows.append(rows.pop(0))
+        retrows.append(linear_interpolate(irows))
+      return (retrows, data)
 
 class SVGGenerator(object):
 
@@ -66,7 +83,7 @@ class SVGGenerator(object):
     row = self._row_data[row_num]
     max_height = max(row)
     max_scaled = max_height * self._scale
-    y_offset = y_offset - (500 - max_scaled)
+    #y_offset = y_offset - (500 - max_scaled)
 
     step = (WIDTH * 1.0) / len(row)
     curr = 0.0
@@ -88,4 +105,4 @@ if __name__ == "__main__":
     e = ElevationParser()
     rows, data = e.parse("testdata/catalina.json")
     s = SVGGenerator(rows, data)
-    s.svg_file([300, 569, 570, 571])
+    s.svg_file([75, 120, 121, 122])
