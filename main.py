@@ -78,7 +78,7 @@ class SVGGenerator(object):
   TEMPLATE = """<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="25.0cm" height="60.0cm" viewBox="0 0 2500 6000"
+<svg width="50.0cm" height="30.0cm" viewBox="0 0 5000 3000"
      xmlns="http://www.w3.org/2000/svg" version="1.1">
  %s
 
@@ -95,12 +95,16 @@ class SVGGenerator(object):
 
 
   def svg_file(self, row_nums):
-    offset = 0
+    y_offset = 0
+    x_offset = 0
     polygon = ""
     for rn in row_nums:
-      pg, yadjust = self.svg(rn, y_offset=offset)
+      pg, yadjust = self.svg(rn, y_offset=y_offset, x_offset=x_offset)
       polygon = polygon + pg + "\n"
-      offset = offset + 610 - yadjust
+      y_offset = y_offset + 610 - yadjust
+      if y_offset + 600 > 3000:
+        y_offset = 0
+        x_offset += 2500
     print(self.TEMPLATE % polygon)
 
   def svg(self, row_num, y_offset=0, x_offset=0):
@@ -123,8 +127,8 @@ class SVGGenerator(object):
     polygon = '<polygon points="%s" fill="none" stroke="blue" />' % (''.join(l))
     polygon = polygon + number_to_svg_fragment(row_num, x_offset + 400, y_offset + DEPTH - 80)
 
-    polygon = polygon + '<circle cx="100" cy="%d" r="32.5" fill="none" stroke="blue"/>' % (550 + y_offset)
-    polygon = polygon + '<circle cx="2400" cy="%d" r="32.5" fill="none" stroke="blue"/>' % (550 + y_offset)
+    polygon = polygon + '<circle cx="%d" cy="%d" r="32.5" fill="none" stroke="blue"/>' % (100 + x_offset, 550 + y_offset)
+    polygon = polygon + '<circle cx="%d" cy="%d" r="32.5" fill="none" stroke="blue"/>' % (2400 + x_offset, 550 + y_offset)
 
     return polygon, (500 - max_scaled)
 
@@ -134,4 +138,4 @@ if __name__ == "__main__":
     e = ElevationParser()
     rows, data = e.parse("testdata/catalina.json")
     s = SVGGenerator(rows, data)
-    s.svg_file([1, 2, 121, 122])
+    s.svg_file(range(45,100))
