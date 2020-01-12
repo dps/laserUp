@@ -35,16 +35,14 @@ class SVGGenerator(object):
   TEMPLATE = """<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="25.0cm" height="6.0cm" viewBox="0 0 2500 600"
+<svg width="25.0cm" height="60.0cm" viewBox="0 0 2500 6000"
      xmlns="http://www.w3.org/2000/svg" version="1.1">
  %s
- <circle cx="100" cy="550" r="32.5" fill="none" stroke="blue"/>
- <circle cx="2400" cy="550" r="32.5" fill="none" stroke="blue"/>
 
 </svg>
   """
 
-  def __init__(self, row_data, json, material_height_mm=1, design_width_mm=250, max_height_mm=50):
+  def __init__(self, row_data, json, material_height_mm=1, design_width_mm=250, max_height_mm=30):
     self._material_height_mm = material_height_mm
     self._design_width_mm = design_width_mm
     self._max_height_mm = max_height_mm
@@ -55,16 +53,21 @@ class SVGGenerator(object):
 
   def svg_file(self, row_nums):
     offset = 0
+    polygon = ""
     for rn in row_nums:
-      poly = self.svg(rn, y_offset=offset)
+      polygon = polygon + self.svg(rn, y_offset=offset) + "\n"
+      offset = offset + 610
     print(self.TEMPLATE % polygon)
 
   def svg(self, row_num, y_offset=0, x_offset=0):
-    max_height = max(row)
     DEPTH = 600
     WIDTH = 2500
     points = [(0 + x_offset,DEPTH + y_offset),(0 + x_offset ,DEPTH - 100 + y_offset)]
     row = self._row_data[row_num]
+    max_height = max(row)
+    max_scaled = max_height * self._scale
+    y_offset = y_offset - (500 - max_scaled)
+
     step = (WIDTH * 1.0) / len(row)
     curr = 0.0
     for point in row:
@@ -74,6 +77,9 @@ class SVGGenerator(object):
     points.append((x_offset + WIDTH, y_offset + DEPTH))
     l = ["%f,%f " % (a,b) for (a,b) in points]
     polygon = '<polygon points="%s" fill="none" stroke="blue" />' % (''.join(l))
+    polygon = polygon + '<circle cx="100" cy="%d" r="32.5" fill="none" stroke="blue"/>' % (550 + y_offset)
+    polygon = polygon + '<circle cx="2400" cy="%d" r="32.5" fill="none" stroke="blue"/>' % (550 + y_offset)
+
     return polygon
 
 
@@ -82,4 +88,4 @@ if __name__ == "__main__":
     e = ElevationParser()
     rows, data = e.parse("testdata/catalina.json")
     s = SVGGenerator(rows, data)
-    s.svg(571)
+    s.svg_file([300, 569, 570, 571])
