@@ -71,6 +71,7 @@ class ElevationParser(object):
         for z in range(0, interpolate_slice_count):
           irows.append(rows.pop(0))
         retrows.append(linear_interpolate(irows))
+      #print(len(retrows))
       return (retrows, data)
 
 class SVGGenerator(object):
@@ -78,7 +79,7 @@ class SVGGenerator(object):
   TEMPLATE = """<?xml version="1.0" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg width="50.0cm" height="30.0cm" viewBox="0 0 5000 3000"
+<svg width="40.0cm" height="24.0cm" viewBox="0 0 5000 3000"
      xmlns="http://www.w3.org/2000/svg" version="1.1">
  %s
 
@@ -102,7 +103,7 @@ class SVGGenerator(object):
       pg, yadjust = self.svg(rn, y_offset=y_offset, x_offset=x_offset)
       polygon = polygon + pg + "\n"
       y_offset = y_offset + 610 - yadjust
-      if y_offset + 600 > 3000:
+      if y_offset + (600 - yadjust) > 3000:
         y_offset = 0
         x_offset += 2500
     print(self.TEMPLATE % polygon)
@@ -127,8 +128,8 @@ class SVGGenerator(object):
     polygon = '<polygon points="%s" fill="none" stroke="blue" />' % (''.join(l))
     polygon = polygon + number_to_svg_fragment(row_num, x_offset + 400, y_offset + DEPTH - 80)
 
-    polygon = polygon + '<circle cx="%d" cy="%d" r="32.5" fill="none" stroke="blue"/>' % (100 + x_offset, 550 + y_offset)
-    polygon = polygon + '<circle cx="%d" cy="%d" r="32.5" fill="none" stroke="blue"/>' % (2400 + x_offset, 550 + y_offset)
+    polygon = polygon + '<circle cx="%d" cy="%d" r="40" fill="none" stroke="blue"/>' % (100 + x_offset, 550 + y_offset)
+    polygon = polygon + '<circle cx="%d" cy="%d" r="40" fill="none" stroke="blue"/>' % (2400 + x_offset, 550 + y_offset)
 
     return polygon, (500 - max_scaled)
 
@@ -138,4 +139,8 @@ if __name__ == "__main__":
     e = ElevationParser()
     rows, data = e.parse("testdata/catalina.json")
     s = SVGGenerator(rows, data)
-    s.svg_file(range(45,100))
+    this_pass=[x for x in range(108,125)]
+    #this_pass = this_pass + [62,63,64,65,66,67,68,69,70]
+    #this_pass = [60, 61]
+    
+    s.svg_file(this_pass)
