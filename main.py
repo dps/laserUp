@@ -1,4 +1,8 @@
 import json
+import sys
+
+def eprint(arg):
+    sys.stderr.write(arg + "\n")
 
 def linear_interpolate(list_of_lists):
   return [(1.0 * sum(e))/len(e) for e in zip(*list_of_lists)]
@@ -56,21 +60,22 @@ class ElevationParser(object):
             if not firstPrint:
               firstPrint = True
           rows.append(row)
-      #print("LandRows: %d of %d" % (landRows,data['windowHeight']))
+      eprint("LandRows: %d of %d" % (landRows,data['windowHeight']))
       # interpolate to maintain aspect ratio of the data
       aspect_ratio = (data['windowWidth'] * 1.0) / (data['windowHeight'] * 1.0)
       desired_slices = design_width_mm / (material_height_mm * aspect_ratio)
-      #print("Desired slices: %f" % desired_slices)
+      eprint("Desired slices: %f" % desired_slices)
       interpolate_slice_count = int(data['windowHeight'] / desired_slices)
       if interpolate_slice_count < 1:
         interpolate_slice_count = 1
-      #print("Interpolate every: %d" % interpolate_slice_count)
+      eprint("Interpolate every: %d" % interpolate_slice_count)
       retrows = []
       for i in range(0, int(desired_slices)):
         irows = []
         for z in range(0, interpolate_slice_count):
           irows.append(rows.pop(0))
         retrows.append(linear_interpolate(irows))
+      eprint("Total slices: %d" % len(retrows))
       return (retrows, data)
 
 class SVGGenerator(object):
@@ -138,4 +143,4 @@ if __name__ == "__main__":
     e = ElevationParser()
     rows, data = e.parse("testdata/catalina.json")
     s = SVGGenerator(rows, data)
-    s.svg_file(range(45,100))
+    s.svg_file(range(28,59))
