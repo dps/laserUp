@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 import json
 import sys
 
@@ -41,7 +42,7 @@ class ElevationParser(object):
   def __init__(self):
       pass
 
-  def parse(self, filename, material_height_mm=1.0, design_width_mm=250.0):
+  def parse(self, filename, material_height_mm=1.0, design_width_mm=200.0):
       data = json.load(open(filename, "r"))
       pos = 0
       landRows = 0
@@ -68,6 +69,7 @@ class ElevationParser(object):
       interpolate_slice_count = int(data['windowHeight'] / desired_slices)
       if interpolate_slice_count < 1:
         interpolate_slice_count = 1
+        desired_slices = data['windowHeight']
       eprint("Interpolate every: %d" % interpolate_slice_count)
       retrows = []
       for i in range(0, int(desired_slices)):
@@ -90,8 +92,7 @@ class SVGGenerator(object):
 </svg>
   """
 
-  def __init__(self, row_data, json, material_height_mm=1, design_width_mm=250, max_height_mm=30):
-    self._material_height_mm = material_height_mm
+  def __init__(self, row_data, json, design_width_mm=250, max_height_mm=30):
     self._design_width_mm = design_width_mm
     self._max_height_mm = max_height_mm
     self._row_data = row_data
@@ -110,7 +111,7 @@ class SVGGenerator(object):
       if y_offset + (600 - yadjust) > 3000:
         y_offset = 0
         x_offset += 2500
-    print(self.TEMPLATE % polygon)
+    return (self.TEMPLATE % polygon)
 
   def svg(self, row_num, y_offset=0, x_offset=0):
     DEPTH = 600
@@ -139,12 +140,32 @@ class SVGGenerator(object):
 
 
 if __name__ == "__main__":
-    #print("laserUp")
-    e = ElevationParser()
-    rows, data = e.parse("testdata/catalina.json")
-    s = SVGGenerator(rows, data)
-    this_pass=[x for x in range(108,125)]
-    #this_pass = this_pass + [62,63,64,65,66,67,68,69,70]
-    #this_pass = [60, 61]
+    parser = ArgumentParser()
+    parser.add_argument("-i", "--input", dest="infile",
+                    help="read JSON input from FILE", required=True)
+    parser.add_argument("-t", "--material_thickness_mm", dest="thickness_mm", type=float,
+                    help="material thickness in mm", required=True)
+
+    parser.add_argument("-o", "--out", dest="outfile",
+                    help="write SVG to FILE")
+    parser.add_argument("-s", "--start_slice", dest="start_slice",
+                    help="First slice number for this sheet", type=int)
+    parser.add_argument("-c", "--slice_count", dest="slice_count",
+                    help="Number of slices for this sheet", type=int)
     
-    s.svg_file(this_pass)
+    args = parser.parse_args()
+
+    e = ElevationParser()
+    rows, data = e.parse(args.infile, material_height_mm=args.thickness_mm)
+    s = SVGGenerator(rows, data)
+    this_pass=[x for x in range(0,len(rows))]
+    if args.start_slice:
+      this_pass = [x for x in range(args.start_slice, args.start_slice + args.slice_count)]
+    
+    svg = s.svg_file(this_pass)
+    if args.outfile == None:
+      print(svg)
+    else:
+      outfile = open(args.outfile, 'w')
+      outfile.write(svg)
+      outfile.close()
