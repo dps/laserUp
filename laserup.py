@@ -66,11 +66,14 @@ class ElevationParser(object):
       aspect_ratio = (data['windowWidth'] * 1.0) / (data['windowHeight'] * 1.0)
       desired_slices = design_width_mm / (material_height_mm * aspect_ratio)
       eprint("Desired slices: %f" % desired_slices)
-      interpolate_slice_count = int(data['windowHeight'] / desired_slices)
+      interpolate_slice_count = round(data['windowHeight'] / desired_slices)
       if interpolate_slice_count < 1:
         interpolate_slice_count = 1
         desired_slices = data['windowHeight']
-      eprint("Interpolate every: %d" % interpolate_slice_count)
+      else:
+        desired_slices = data['windowHeight'] / interpolate_slice_count
+      eprint("Desired slices after interpolation: %f" % desired_slices)
+      eprint("Interpolate every: %d %f" % (interpolate_slice_count, data['windowHeight'] / desired_slices ))
       retrows = []
       for i in range(0, int(desired_slices)):
         irows = []
