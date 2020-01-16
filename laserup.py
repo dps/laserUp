@@ -1,3 +1,6 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
 from argparse import ArgumentParser
 import json
 import sys
@@ -95,12 +98,14 @@ class SVGGenerator(object):
 </svg>
   """
 
-  def __init__(self, row_data, json, design_width_mm=250, max_height_mm=30):
-    self._design_width_mm = design_width_mm
-    self._max_height_mm = max_height_mm
+  def __init__(self, row_data, json, design_width_mm=200, max_height_mm=60):
+    self._max_height_px = max_height_mm * 10
     self._row_data = row_data
     self._json = json
-    self._scale = (self._max_height_mm * 10.0) / self._json['maxHeight']
+    self._scale = (self._max_height_px * 1.0) / self._json['maxHeight']
+    self._vspacing_px = 10
+    self._workspace_height_px = 3000
+    self._workspace_width_px = 2500
 
 
   def svg_file(self, row_nums):
@@ -110,19 +115,19 @@ class SVGGenerator(object):
     for rn in row_nums:
       pg, yadjust = self.svg(rn, y_offset=y_offset, x_offset=x_offset)
       polygon = polygon + pg + "\n"
-      y_offset = y_offset + 610 - yadjust
-      if y_offset + (600 - yadjust) > 3000:
+      y_offset = y_offset + 100 + self._max_height_px + self._vspacing_px - yadjust
+      if y_offset + (100 + self._max_height_px - yadjust) > self._workspace_height_px:
         y_offset = 0
-        x_offset += 2500
+        x_offset += self._workspace_width_px
     return (self.TEMPLATE % polygon)
 
   def svg(self, row_num, y_offset=0, x_offset=0):
-    DEPTH = 600
-    WIDTH = 2500
+    DEPTH = self._max_height_px + 100
+    WIDTH = self._workspace_width_px
     row = self._row_data[row_num]
     max_height = max(row)
     max_scaled = max_height * self._scale
-    y_offset = y_offset - (500 - max_scaled)
+    y_offset = y_offset - (self._max_height_px - max_scaled)
     points = [(0 + x_offset,DEPTH + y_offset),(0 + x_offset ,DEPTH - 100 + y_offset)]
 
     step = (WIDTH * 1.0) / len(row)
@@ -136,19 +141,20 @@ class SVGGenerator(object):
     polygon = '<polygon points="%s" fill="none" stroke="blue" />' % (''.join(l))
     polygon = polygon + number_to_svg_fragment(row_num, x_offset + 400, y_offset + DEPTH - 80)
 
-    polygon = polygon + '<circle cx="%d" cy="%d" r="40" fill="none" stroke="blue"/>' % (100 + x_offset, 550 + y_offset)
-    polygon = polygon + '<circle cx="%d" cy="%d" r="40" fill="none" stroke="blue"/>' % (2400 + x_offset, 550 + y_offset)
+    polygon = polygon + '<circle cx="%d" cy="%d" r="40" fill="none" stroke="blue"/>' % (100 + x_offset, DEPTH - 50 + y_offset)
+    polygon = polygon + '<circle cx="%d" cy="%d" r="40" fill="none" stroke="blue"/>' % (2400 + x_offset, DEPTH - 50 + y_offset)
 
-    return polygon, (500 - max_scaled)
+    return polygon, (self._max_height_px - max_scaled)
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
+    parser = ArgumentParser(description="Create 3D relief map slices for Glowforge.")
     parser.add_argument("-i", "--input", dest="infile",
                     help="read JSON input from FILE", required=True)
     parser.add_argument("-t", "--material_thickness_mm", dest="thickness_mm", type=float,
                     help="material thickness in mm", required=True)
-
+    parser.add_argument("-m", "--max_height_mm", dest="max_height_mm", type=float,
+                    help="max design height in mm", default=60)
     parser.add_argument("-o", "--out", dest="outfile",
                     help="write SVG to FILE")
     parser.add_argument("-s", "--start_slice", dest="start_slice",
@@ -160,7 +166,7 @@ if __name__ == "__main__":
 
     e = ElevationParser()
     rows, data = e.parse(args.infile, material_height_mm=args.thickness_mm)
-    s = SVGGenerator(rows, data)
+    s = SVGGenerator(rows, data, max_height_mm=args.max_height_mm)
     this_pass=[x for x in range(0,len(rows))]
     if args.start_slice:
       if not args.slice_count:
