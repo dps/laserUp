@@ -77,7 +77,7 @@ class ElevationParser(object):
       retrows = []
       for i in range(0, int(desired_slices)):
         irows = []
-        for z in range(0, interpolate_slice_count):
+        for z in range(0, int(interpolate_slice_count)):
           irows.append(rows.pop(0))
         retrows.append(linear_interpolate(irows))
       eprint("Total slices: %d" % len(retrows))
@@ -163,7 +163,10 @@ if __name__ == "__main__":
     s = SVGGenerator(rows, data)
     this_pass=[x for x in range(0,len(rows))]
     if args.start_slice:
-      this_pass = [x for x in range(args.start_slice, args.start_slice + args.slice_count)]
+      if not args.slice_count:
+        this_pass = [x for x in range(args.start_slice, len(rows))]
+      else:
+        this_pass = [x for x in range(args.start_slice, args.start_slice + args.slice_count)]
     
     svg = s.svg_file(this_pass)
     if args.outfile == None:
