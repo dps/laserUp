@@ -148,7 +148,9 @@ class SVGGenerator(object):
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser(description="Create 3D relief map slices for Glowforge.")
+    parser = ArgumentParser(description="🏔 Create 3D relief map slices for Glowforge. " +
+                            "🌎Generate input files at http://singleton.io/peak-map/",
+                            epilog="")
     parser.add_argument("-i", "--input", dest="infile",
                     help="read JSON input from FILE", required=True)
     parser.add_argument("-t", "--material_thickness_mm", dest="thickness_mm", type=float,
