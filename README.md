@@ -6,9 +6,11 @@ See https://github.com/dps/peak-map for a UI to generate the raw data.
 
 ## Usage
 ```
-🚀 python laserup.py -h
-usage: laserup.py [-h] -i INFILE -t THICKNESS_MM [-o OUTFILE] [-s START_SLICE]
-                  [-c SLICE_COUNT]
+🚀 python laserup.py --help   
+usage: laserup.py [-h] -i INFILE -t THICKNESS_MM [-m MAX_HEIGHT_MM]
+                  [-o OUTFILE] [-s START_SLICE] [-c SLICE_COUNT]
+
+Create 3D relief map slices for Glowforge.
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -16,12 +18,15 @@ optional arguments:
                         read JSON input from FILE
   -t THICKNESS_MM, --material_thickness_mm THICKNESS_MM
                         material thickness in mm
+  -m MAX_HEIGHT_MM, --max_height_mm MAX_HEIGHT_MM
+                        max design height in mm
   -o OUTFILE, --out OUTFILE
                         write SVG to FILE
   -s START_SLICE, --start_slice START_SLICE
                         First slice number for this sheet
   -c SLICE_COUNT, --slice_count SLICE_COUNT
                         Number of slices for this sheet
+
 ```
 
 ## Example
