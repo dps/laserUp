@@ -108,7 +108,7 @@ class SVGGenerator(object):
     self._workspace_width_px = 2500
 
 
-  def svg_file(self, row_nums):
+  def svg_file(self, row_nums, base_name):
     y_offset = 0
     x_offset = 0
     polygon = ""
@@ -119,7 +119,10 @@ class SVGGenerator(object):
       if y_offset + (100 + self._max_height_px - yadjust) > self._workspace_height_px:
         y_offset = 0
         x_offset += self._workspace_width_px
-    return (self.TEMPLATE % polygon)
+    outfile = open(args.outfile, 'w')
+    outfile.write(self.TEMPLATE % polygon)
+    outfile.close()
+    return 1
 
   def svg(self, row_num, y_offset=0, x_offset=0):
     DEPTH = self._max_height_px + 100
@@ -158,7 +161,7 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--max_height_mm", dest="max_height_mm", type=float,
                     help="max design height in mm", default=60)
     parser.add_argument("-o", "--out", dest="outfile",
-                    help="write SVG to FILE")
+                    help="write SVG to FILE", required=True)
     parser.add_argument("-s", "--start_slice", dest="start_slice",
                     help="First slice number for this sheet", type=int)
     parser.add_argument("-c", "--slice_count", dest="slice_count",
@@ -176,10 +179,4 @@ if __name__ == "__main__":
       else:
         this_pass = [x for x in range(args.start_slice, args.start_slice + args.slice_count)]
     
-    svg = s.svg_file(this_pass)
-    if args.outfile == None:
-      print(svg)
-    else:
-      outfile = open(args.outfile, 'w')
-      outfile.write(svg)
-      outfile.close()
+    svg = s.svg_file(this_pass, args.outfile)
