@@ -4,6 +4,8 @@
 from argparse import ArgumentParser
 import json
 import sys
+import os
+import shutil
 
 def eprint(arg):
     sys.stderr.write(arg + "\n")
@@ -99,16 +101,19 @@ class SVGGenerator(object):
   """
 
   def __init__(self, row_data, json, design_width_mm=200, max_height_mm=60):
-    self._max_height_px = max_height_mm * 10
+    self._max_height_px = max_height_mm * 10 # there is a bug in the conversion factor here but not fixing until catalina design made.
     self._row_data = row_data
     self._json = json
     self._scale = (self._max_height_px * 1.0) / self._json['maxHeight']
     self._vspacing_px = 10
     self._workspace_height_px = 3000
-    self._workspace_width_px = 2500
+    self._workspace_width_px = 5000
+    self._design_width_px = design_width_mm * (self._workspace_width_px / 400.0)
 
 
   def svg_file(self, row_nums, base_name):
+    current_file_num = 0
+    outfile = open("%s_%04d.svg" % (args.outfile, current_file_num), 'w')
     y_offset = 0
     x_offset = 0
     polygon = ""
@@ -117,16 +122,23 @@ class SVGGenerator(object):
       polygon = polygon + pg + "\n"
       y_offset = y_offset + 100 + self._max_height_px + self._vspacing_px - yadjust
       if y_offset + (100 + self._max_height_px - yadjust) > self._workspace_height_px:
+        if x_offset + self._design_width_px*2 > self._workspace_width_px:
+          current_file_num += 1
+          outfile.write(self.TEMPLATE % polygon)
+          outfile.close()
+          outfile = open("%s_%04d.svg" % (args.outfile, current_file_num), 'w')
+          polygon = ""
+          x_offset = 0
+        else:
+          x_offset += self._design_width_px
         y_offset = 0
-        x_offset += self._workspace_width_px
-    outfile = open(args.outfile, 'w')
     outfile.write(self.TEMPLATE % polygon)
     outfile.close()
-    return 1
+    return current_file_num + 1
 
   def svg(self, row_num, y_offset=0, x_offset=0):
     DEPTH = self._max_height_px + 100
-    WIDTH = self._workspace_width_px
+    WIDTH = self._design_width_px
     row = self._row_data[row_num]
     max_height = max(row)
     max_scaled = max_height * self._scale
@@ -161,22 +173,43 @@ if __name__ == "__main__":
     parser.add_argument("-m", "--max_height_mm", dest="max_height_mm", type=float,
                     help="max design height in mm", default=60)
     parser.add_argument("-o", "--out", dest="outfile",
-                    help="write SVG to FILE", required=True)
+                    help="Output DIRECTORY and file name BASE. e.g. 'foo' -> writes SVG to files foo/foo_0000.svg, foo/foo_0001.svg etc.",
+                    required=True)
     parser.add_argument("-s", "--start_slice", dest="start_slice",
-                    help="First slice number for this sheet", type=int)
+                    help="First slice number for this sheet", type=int, default=0)
     parser.add_argument("-c", "--slice_count", dest="slice_count",
                     help="Number of slices for this sheet", type=int)
+    parser.add_argument("-f", "--force", dest="force", action='store_true',
+                    help="Delete and overwrite existing output if already exists")
     
     args = parser.parse_args()
+
+    existing_output = True
+    try:
+      os.listdir(args.outfile)
+    except OSError:
+      existing_output = False
+    
+    if existing_output:
+      if args.force:
+        eprint('-f: deleting existing output directory.')
+        shutil.rmtree(args.outfile)
+      else:
+        eprint('%s/ already exists. Use -f to overwrite.' % args.outfile)
+        quit()
+
+    os.mkdir(args.outfile)
 
     e = ElevationParser()
     rows, data = e.parse(args.infile, material_height_mm=args.thickness_mm)
     s = SVGGenerator(rows, data, max_height_mm=args.max_height_mm)
     this_pass=[x for x in range(0,len(rows))]
-    if args.start_slice:
+    if args.start_slice or args.slice_count:
       if not args.slice_count:
         this_pass = [x for x in range(args.start_slice, len(rows))]
       else:
         this_pass = [x for x in range(args.start_slice, args.start_slice + args.slice_count)]
     
-    svg = s.svg_file(this_pass, args.outfile)
+    os.chdir(args.outfile)
+    num_files = s.svg_file(this_pass, args.outfile)
+    eprint("Wrote %d files to %s/" % (num_files, args.outfile))
