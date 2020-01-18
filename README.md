@@ -36,7 +36,7 @@ optional arguments:
 
 ## Example
 ```
-$ $ python laserup.py -t 3.175 -i testdata/catalina.json -o out
+$ python laserup.py -t 3.175 -i testdata/catalina.json -o out
 Source rows containing land: 670 of 1085
 Source total slices at this thickness before considering interpolation: 59.900488
 Source total slices at this thickness after interpolation: 60.277778
