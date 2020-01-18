@@ -47,11 +47,10 @@ class ElevationParser(object):
   def __init__(self):
       pass
 
-  def parse(self, filename, material_height_mm=1.0, design_width_mm=200.0):
+  def parse(self, filename, material_height_mm=1.0, design_width_mm=200.0, land_only=False):
       data = json.load(open(filename, "r"))
       pos = 0
       landRows = 0
-      firstPrint = False
       rows = []
       for row in range(0, data['windowHeight']):
           hasLand = False
@@ -63,24 +62,23 @@ class ElevationParser(object):
               pos = pos + 1
           if hasLand:
             landRows = landRows + 1
-            if not firstPrint:
-              firstPrint = True
-          rows.append(row)
-      eprint("LandRows: %d of %d" % (landRows,data['windowHeight']))
+          if (not land_only) or hasLand:
+            rows.append(row)
+      eprint("Source rows containing land: %d of %d" % (landRows, data['windowHeight']))
       # interpolate to maintain aspect ratio of the data
       aspect_ratio = (data['windowWidth'] * 1.0) / (data['windowHeight'] * 1.0)
       desired_slices = design_width_mm / (material_height_mm * aspect_ratio)
-      eprint("Desired slices: %f" % desired_slices)
+      eprint("Source total slices at this thickness before considering interpolation: %f" % desired_slices)
       interpolate_slice_count = round(data['windowHeight'] / desired_slices)
       if interpolate_slice_count < 1:
         interpolate_slice_count = 1
         desired_slices = data['windowHeight']
       else:
         desired_slices = data['windowHeight'] / interpolate_slice_count
-      eprint("Desired slices after interpolation: %f" % desired_slices)
-      eprint("Interpolate every: %d %f" % (interpolate_slice_count, data['windowHeight'] / desired_slices ))
+      eprint("Source total slices at this thickness after interpolation: %f" % desired_slices)
+      eprint("Interpolating every: %d" % (interpolate_slice_count))
       retrows = []
-      for i in range(0, int(desired_slices)):
+      for i in range(0, len(rows) / int(interpolate_slice_count)):
         irows = []
         for z in range(0, int(interpolate_slice_count)):
           irows.append(rows.pop(0))
@@ -181,6 +179,8 @@ if __name__ == "__main__":
                     help="Number of slices for this sheet", type=int)
     parser.add_argument("-f", "--force", dest="force", action='store_true',
                     help="Delete and overwrite existing output if already exists")
+    parser.add_argument("-l", "--land_only", dest="land_only", action='store_true',
+                    help="Ignore rows in source data containing no land (not recommended if your design has multiple islands)")
     
     args = parser.parse_args()
 
@@ -201,7 +201,7 @@ if __name__ == "__main__":
     os.mkdir(args.outfile)
 
     e = ElevationParser()
-    rows, data = e.parse(args.infile, material_height_mm=args.thickness_mm)
+    rows, data = e.parse(args.infile, material_height_mm=args.thickness_mm, land_only=args.land_only)
     s = SVGGenerator(rows, data, max_height_mm=args.max_height_mm)
     this_pass=[x for x in range(0,len(rows))]
     if args.start_slice or args.slice_count:
