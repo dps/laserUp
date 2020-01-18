@@ -36,18 +36,22 @@ optional arguments:
 
 ## Example
 ```
-$ python laserup.py -i testdata/catalina.json -t 5 -o first.svg -s 0 -c 28
-LandRows: 670 of 1085
-Desired slices: 38.036810
-Interpolate every: 28
-Total slices: 38
-Writing 28 slices starting at 0.
+$ $ python laserup.py -t 3.175 -i testdata/catalina.json -o out
+Source rows containing land: 670 of 1085
+Source total slices at this thickness before considering interpolation: 59.900488
+Source total slices at this thickness after interpolation: 60.277778
+Interpolating every: 18
+Total slices: 60
+Wrote 4 files to out/
+```
 
-$ python laserup.py -i testdata/catalina.json -t 5 -o second.svg -s 28 -c 10 
-LandRows: 670 of 1085
-Desired slices: 38.036810
-Interpolate every: 28
-Total slices: 38
-Writing 10 slices starting at 28.
-
+```
+$ python laserup.py -t 0.508 -i testdata/catalina.json -m 40 -o cata -s 63 -c 225 -f
+-f: deleting existing output directory.
+Source rows containing land: 670 of 1085
+Source total slices at this thickness before considering interpolation: 374.378049
+Source total slices at this thickness after interpolation: 361.666667
+Interpolating every: 3
+Total slices: 361
+Wrote 16 files to cata/
 ```
