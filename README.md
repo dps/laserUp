@@ -6,11 +6,12 @@ See https://github.com/dps/peak-map for a UI to generate the raw input data (hos
 
 ## Usage
 ```
-🚀 python laserup.py --help   
-usage: laserup.py [-h] -i INFILE -t THICKNESS_MM [-m MAX_HEIGHT_MM]
-                  [-o OUTFILE] [-s START_SLICE] [-c SLICE_COUNT]
+🚀 python laserup.py --help                                                
+usage: laserup.py [-h] -i INFILE -t THICKNESS_MM [-m MAX_HEIGHT_MM] -o OUTFILE
+                  [-s START_SLICE] [-c SLICE_COUNT] [-f] [-l]
 
-Create 3D relief map slices for Glowforge.
+🏔 Create 3D relief map slices for Glowforge. 🌎Generate input files at
+http://singleton.io/peak-map/
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -21,12 +22,16 @@ optional arguments:
   -m MAX_HEIGHT_MM, --max_height_mm MAX_HEIGHT_MM
                         max design height in mm
   -o OUTFILE, --out OUTFILE
-                        write SVG to FILE
+                        Output DIRECTORY and file name BASE. e.g. 'foo' ->
+                        writes SVG to files foo/foo_0000.svg, foo/foo_0001.svg
+                        etc.
   -s START_SLICE, --start_slice START_SLICE
                         First slice number for this sheet
   -c SLICE_COUNT, --slice_count SLICE_COUNT
                         Number of slices for this sheet
-
+  -f, --force           Delete and overwrite existing output if already exists
+  -l, --land_only       Ignore rows in source data containing no land (not
+                        recommended if your design has multiple islands)
 ```
 
 ## Example
